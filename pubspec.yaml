@@ -1,0 +1,11 @@
+name: isolate_pool
+description: Jut like a thread pool, but with isolates
+version: 0.0.1
+homepage:
+
+environment:
+  sdk: '>=2.18.6 <3.0.0'
+
+dev_dependencies:
+  test:
+  lints: 
