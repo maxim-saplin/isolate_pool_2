@@ -1,4 +1,4 @@
-name: isolate_pool
+name: isolate_pool_2
 description: Jut like a thread pool, but with isolates
 version: 1.0.0
 homepage: https://github.com/maxim-saplin/isolate_pool

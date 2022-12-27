@@ -2,7 +2,7 @@
 @TestOn('vm')
 
 import 'package:test/test.dart';
-import 'package:isolate_pool/isolate_pool.dart';
+import 'package:isolate_pool/isolate_pool_2.dart';
 
 class NumbersJob extends PooledJob<int> {
   final int number;
