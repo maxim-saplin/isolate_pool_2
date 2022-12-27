@@ -1,3 +1,6 @@
-## 0.0.1
-
-* TODO: Describe initial release.
+## 1.0.0
+- IsolatePool
+- PooledJob
+- PooledInstance, PooledInstanceProxy, Action
+- Minimal docs
+- Unit tests as samples
