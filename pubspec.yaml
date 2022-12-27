@@ -1,5 +1,5 @@
 name: isolate_pool_2
-description: Jut like a thread pool, but with isolates
+description: Just like a thread pool, but with isolates. The package allows creating up-and-running set of isolates that accept requests (aka pooled jobs) or host Dart instances that can accept incoming (from main isolate) requests via Action objects
 version: 1.0.0
 homepage: https://github.com/maxim-saplin/isolate_pool
 

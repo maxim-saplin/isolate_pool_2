@@ -1,0 +1,11 @@
+name: example
+
+environment:
+  sdk: '>=2.18.6 <3.0.0'
+
+dependencies:
+  isolate_pool_2:
+    path: ../
+
+dev_dependencies:
+  lints: ^2.0.0

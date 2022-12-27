@@ -46,6 +46,7 @@ class PooledInstanceProxy {
   final IsolatePool _pool;
   PooledInstanceProxy._(this._instanceId, this._pool, this.remoteCallback);
 
+  /// Pass [Action] with required params to the remote instance and get result
   Future<R> callRemoteMethod<R>(Action action) {
     if (_pool.state == IsolatePoolState.stoped) {
       throw 'Isolate pool has been stoped, cant call pooled instnace method';
@@ -510,6 +511,7 @@ class _IsolateCallbackArg<A> {
   _IsolateCallbackArg(this.value);
 }
 
+/// Derive from this class if you want to create isolare jobs that can call back to main isolate (e.g. report progress)
 abstract class CallbackIsolateJob<R, A> {
   final bool synchronous;
   CallbackIsolateJob(this.synchronous);
@@ -524,6 +526,7 @@ abstract class CallbackIsolateJob<R, A> {
   SendPort? _errorPort;
 }
 
+/// This class allows spawning a new isolate with callback job ([CallbackIsolateJob]) without using isolate pool
 class CallbackIsolate<R, A> {
   final CallbackIsolateJob<R, A> job;
   CallbackIsolate(this.job);
