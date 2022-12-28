@@ -1,6 +1,6 @@
 name: isolate_pool_2
-description: Just like a thread pool, but with isolates. The package allows creating up-and-running set of isolates that accept requests (aka pooled jobs) or host Dart instances that can accept incoming (from main isolate) requests via Action objects
-version: 1.0.1
+description: Just like a thread pool, but with isolates. The package allows creating up-and-running isolates that can accept requests and do heavy lifting outside main isolate
+version: 1.0.2
 homepage: https://github.com/maxim-saplin/isolate_pool
 
 environment:
