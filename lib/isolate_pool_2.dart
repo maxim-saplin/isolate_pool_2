@@ -6,7 +6,7 @@ import 'dart:isolate';
 /// One-off operation to be queued and executed in isolate pool
 /// Whatever fields are dedfined in the instance will be passed to isolate.
 /// The generic type `E` determines the return type of the job.
-/// Be considerate of Dart's rule that can cross isolate bounaries, i.e. you will
+/// Be considerate of Dart's rule defining what types can cross isolate bounaries, i.e. you will
 /// have challenges with objects that wrap native resources (e.g. fil handles).
 /// You may reffer to Dart's [SendPort.send] for details on the limitations.
 abstract class PooledJob<E> {
@@ -20,7 +20,9 @@ int _instanceIdCounter = 0;
 //TODO consider adding timeouts, check fulfilled requests are deleted
 Map<int, Completer> _isolateRequestCompleters = {}; // requestId is key
 
-abstract class Action {} // holder of action type and payload
+/// Inherti when using pooled instances and defining actions.
+/// Action objects are holders of action type and payload/params when calling pooled intances
+abstract class Action {}
 
 class _Request {
   final int instanceId;
@@ -46,7 +48,8 @@ class PooledInstanceProxy {
   final IsolatePool _pool;
   PooledInstanceProxy._(this._instanceId, this._pool, this.remoteCallback);
 
-  /// Pass [Action] with required params to the remote instance and get result
+  /// Pass [Action] with required params to the remote instance and get result. Re-throws expcetion
+  /// should the action fail in the executing isolate
   Future<R> callRemoteMethod<R>(Action action) {
     if (_pool.state == IsolatePoolState.stoped) {
       throw 'Isolate pool has been stoped, cant call pooled instnace method';
@@ -108,7 +111,7 @@ class _InstanceMapEntry {
   _InstanceMapEntry(this.instance, this.isolateIndex);
 }
 
-/// Isolate pool can be in 3 states, not started, started and stoped.
+/// Isolate pool can be in 3 states: not started, started and stoped.
 /// Stoped pool can't be restarted, create a new one instead
 enum IsolatePoolState { notStarted, started, stoped }
 
@@ -152,7 +155,8 @@ class IsolatePool {
   /// Prepare the pool of [numberOfIsolates] isolates to be latter started by [IsolatePool.start]
   IsolatePool(this.numberOfIsolates);
 
-  /// Schedules a job on one of pool's isolates, executes and returns the result
+  /// Schedules a job on one of pool's isolates, executes and returns the result. Re-throws expcetion
+  /// should the action fail in the executing isolate
   Future<T> scheduleJob<T>(PooledJob job) {
     if (state == IsolatePoolState.stoped) {
       throw 'Isolate pool has been stoped, cant schedule a job';
