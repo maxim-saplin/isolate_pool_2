@@ -221,6 +221,7 @@ class IsolatePool {
 
   int _isolatesStarted = 0;
   double _avgMicroseconds = 0;
+  List<ReceivePort> receivePorts = [];
 
   /// Start the pool
   Future start() async {
@@ -240,6 +241,7 @@ class IsolatePool {
 
     for (var i = 0; i < numberOfIsolates; i++) {
       var receivePort = ReceivePort();
+      receivePorts.add(receivePort);
       var sw = Stopwatch();
 
       sw.start();
@@ -385,6 +387,9 @@ class IsolatePool {
         }
       }
       _requestCompleters.clear();
+      for (var rPort in receivePorts) {
+        rPort.close(); // Issue #3
+      }
     }
 
     _state = IsolatePoolState.stoped;

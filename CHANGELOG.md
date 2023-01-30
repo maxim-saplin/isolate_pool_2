@@ -1,3 +1,6 @@
+## 1.0.4
+- Closing receive ports on isolate pool stoppage to avoid issue with hanging process (issue #3)
+
 ## 1.0.3
 - Added more docs
 - Added no re-throw explanation in docs (issue #1)
