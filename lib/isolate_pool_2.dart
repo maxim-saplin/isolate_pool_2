@@ -218,9 +218,12 @@ class IsolatePool {
 
   void _runJobWithVacantIsolate() {
     var availableIsolate = _isolateBusyWithJob.indexOf(false);
-    if (availableIsolate > -1 && lastJobStartedIndex < _jobs.length) {
-      var job = _jobs.entries.first.value;
+    if (availableIsolate > -1 &&
+        _jobs.entries.where((j) => j.value.started == false).isNotEmpty) {
+      var job =
+          _jobs.entries.where((j) => j.value.started == false).first.value;
       job.isolateIndex = availableIsolate;
+      job.started = true;
       _isolateSendPorts[availableIsolate]!.send(job);
       _isolateBusyWithJob[availableIsolate] = true;
     }
@@ -437,6 +440,7 @@ class _PooledJobInternal {
   final PooledJob job;
   final int jobIndex;
   int isolateIndex;
+  bool started = false;
 }
 
 class _PooledJobResult {

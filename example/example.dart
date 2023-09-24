@@ -4,6 +4,53 @@ import 'dart:typed_data';
 
 import 'package:isolate_pool_2/isolate_pool_2.dart';
 
+void main(List<String> arguments) async {
+  var pool = IsolatePool(4);
+  await pool.start();
+
+  await multiplierJobs(pool);
+
+  await randomViaPooledInstances(pool);
+}
+
+Future<void> multiplierJobs(IsolatePool pool) async {
+  var futures = <Future>[];
+  for (var i = 0; i < 15; i++) {
+    futures.add(pool.scheduleJob(DoubleNumbersJob(101 + i)));
+  }
+
+  print(await Future.wait(futures));
+}
+
+class DoubleNumbersJob extends PooledJob<int> {
+  final int number;
+
+  DoubleNumbersJob(this.number);
+
+  @override
+  Future<int> job() async {
+    print('Number $number');
+    return number * 2;
+  }
+}
+
+Future<void> randomViaPooledInstances(IsolatePool pool) async {
+  var proxies = List<PooledInstanceProxy>.empty(growable: true);
+
+  for (var i = 0; i < 8; i++) {
+    proxies.add(await pool.addInstance(RandomBytesGenerator()));
+  }
+
+  var futures = List<Future<RandomBytes>>.generate(
+      8, (i) => proxies[i].callRemoteMethod(GetNBytesAction(1024 * 1024)));
+
+  var results = await Future.wait(futures);
+
+  for (var r in results) {
+    print('Min: ${r.min}, Max: ${r.max}, Avg: ${r.avg.toStringAsFixed(1)},');
+  }
+}
+
 class RandomBytesGenerator extends PooledInstance {
   late Random _rand;
 
@@ -63,24 +110,4 @@ class RandomBytes {
   final double avg;
 
   RandomBytes(this.bytes, this.number, this.min, this.max, this.avg);
-}
-
-void main(List<String> arguments) async {
-  var pool = IsolatePool(4);
-  await pool.start();
-
-  var proxies = List<PooledInstanceProxy>.empty(growable: true);
-
-  for (var i = 0; i < 8; i++) {
-    proxies.add(await pool.addInstance(RandomBytesGenerator()));
-  }
-
-  var futures = List<Future<RandomBytes>>.generate(
-      8, (i) => proxies[i].callRemoteMethod(GetNBytesAction(1024 * 1024)));
-
-  var results = await Future.wait(futures);
-
-  for (var r in results) {
-    print('Min: ${r.min}, Max: ${r.max}, Avg: ${r.avg.toStringAsFixed(1)},');
-  }
 }
