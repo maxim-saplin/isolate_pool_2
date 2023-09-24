@@ -118,14 +118,20 @@ enum IsolatePoolState { notStarted, started, stoped }
 /// Isolate pool creates and starts a given number of isolates (passed to constructor)
 /// and schedules execution of single jobs (see [PooledJob]) or puts and keeps
 /// their instacnes of [PooledInstance] allowing to comunicate with those.
+/// Job is a one-time object that allows to schedule a single unit of computation,
+/// run it on one of the isolates and return back the result. Jobs do not persist between calls.
+/// Pooled instances persist in isolates, can store own state and respond to a
+/// number of calls.
 class IsolatePool {
   final int numberOfIsolates;
   final List<SendPort?> _isolateSendPorts = [];
   final List<Isolate> _isolates = [];
+
+  // Job specific fields
   final List<bool> _isolateBusyWithJob = [];
-  final List<_PooledJobInternal> _jobs = [];
-  int lastJobStarted = 0;
-  List<Completer> jobCompleters = [];
+  final Map<int, _PooledJobInternal> _jobs = {}; // index, job
+  int lastJobStartedIndex = 0; // index of last job started
+  final Map<int, Completer> jobCompleters = {}; // index, job completer
 
   IsolatePoolState _state = IsolatePoolState.notStarted;
 
@@ -161,9 +167,11 @@ class IsolatePool {
     if (state == IsolatePoolState.stoped) {
       throw 'Isolate pool has been stoped, cant schedule a job';
     }
-    _jobs.add(_PooledJobInternal(job, _jobs.length, -1));
+    _jobs[lastJobStartedIndex] =
+        _PooledJobInternal(job, lastJobStartedIndex, -1);
     var completer = Completer<T>();
-    jobCompleters.add(completer);
+    jobCompleters[lastJobStartedIndex] = completer;
+    lastJobStartedIndex++;
     _runJobWithVacantIsolate();
     return completer.future;
   }
@@ -210,12 +218,11 @@ class IsolatePool {
 
   void _runJobWithVacantIsolate() {
     var availableIsolate = _isolateBusyWithJob.indexOf(false);
-    if (availableIsolate > -1 && lastJobStarted < _jobs.length) {
-      var job = _jobs[lastJobStarted];
+    if (availableIsolate > -1 && lastJobStartedIndex < _jobs.length) {
+      var job = _jobs.entries.first.value;
       job.isolateIndex = availableIsolate;
       _isolateSendPorts[availableIsolate]!.send(job);
       _isolateBusyWithJob[availableIsolate] = true;
-      lastJobStarted++;
     }
   }
 
@@ -313,11 +320,17 @@ class IsolatePool {
 
   void _processJobResult(_PooledJobResult result) {
     _isolateBusyWithJob[result.isolateIndex] = false;
+    assert(jobCompleters.containsKey(result.jobIndex));
 
     if (result.error == null) {
-      jobCompleters[result.jobIndex].complete(result.result);
+      jobCompleters[result.jobIndex]?.complete(result.result);
     } else {
-      jobCompleters[result.jobIndex].completeError(result.error);
+      jobCompleters[result.jobIndex]?.completeError(result.error);
+    }
+
+    if (_jobs.containsKey(result.jobIndex)) {
+      _jobs.remove(result.jobIndex);
+      jobCompleters.remove(result.jobIndex);
     }
     _runJobWithVacantIsolate();
   }
@@ -365,7 +378,7 @@ class IsolatePool {
   void stop() {
     for (var i in _isolates) {
       i.kill();
-      for (var c in jobCompleters) {
+      for (var c in jobCompleters.values) {
         if (!c.isCompleted) {
           c.completeError('Isolate pool stopped upon request, cancelling jobs');
         }

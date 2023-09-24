@@ -1,3 +1,6 @@
+## 1.0.5
+- Fixed memory leak when scheduling multiple jobs
+
 ## 1.0.4
 - Closing receive ports on isolate pool stoppage to avoid issue with hanging process (issue #3)
 
