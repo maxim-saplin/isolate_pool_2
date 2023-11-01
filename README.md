@@ -8,4 +8,5 @@ The pool can accept one-time requests (aka pooled jobs) mimicking Flutter's `com
 ## Use-case two
 The second way of using the APIs is to have an instance created in one of the pooled isolates and communicate with it via a proxy instance, It is kind of messaging from the main isolate to one of the isolates in a pool with multiple instances created in multiple isolates, messages and responses properly correlated and arranged via descendants of `Action`. You can wrap `PooledInstanceProxy` in a class and mimic RPC kind of communication with `PooledInstance` in external isolate.
 
+## How it works
 ![Diagram](https://github.com/maxim-saplin/isolate_pool_2/assets/7947027/1066382f-58c6-4470-b907-1b0f01c816f5)
