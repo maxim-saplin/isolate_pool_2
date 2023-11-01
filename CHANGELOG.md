@@ -1,3 +1,8 @@
+## 1.0.6
+- Upgraded minimum Dart SDK to 3.0.0
+- Refined example, added comments
+- Updates to README
+
 ## 1.0.5
 - Fixed memory leak when scheduling multiple jobs
 
