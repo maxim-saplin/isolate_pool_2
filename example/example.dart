@@ -99,7 +99,7 @@ class RandomBytesGenerator extends PooledInstance {
     _rand = Random();
   }
 
-  // Internal imnplementation
+  // Internal imnplementation, generating random bytes
   RandomBytes getBytes(int n) {
     var items = [Uint8List(n)];
     for (var i = 0; i < n; i++) {
@@ -112,6 +112,7 @@ class RandomBytesGenerator extends PooledInstance {
     return RandomBytes(t, min, max, avg);
   }
 
+  // And calculating stats
   (int min, int max, double avg) getStats(Uint8List items) {
     var min = 255;
     var max = 0;
@@ -138,12 +139,21 @@ class RandomBytesGenerator extends PooledInstance {
   // and transfer a payload - the Action obhject is passed in from the main isolate as-is
   @override
   Future<dynamic> receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case GetNBytesAction:
-        return getBytes((action as GetNBytesAction).numberOfBytes);
-      case ComputeStats:
-        var (min, max, avg) = getStats(
-            (action as ComputeStats).bytes.materialize().asUint8List());
+    // Pre Dart 3.0
+    // switch (action.runtimeType) {
+    //   case GetNBytesAction:
+    //     return getBytes((action as GetNBytesAction).numberOfBytes);
+    //   case ComputeStats:
+    //     var (min, max, avg) = getStats(
+    //         (action as ComputeStats).bytes.materialize().asUint8List());
+
+    // Using object patterns introduced in Dart 3.0
+    switch (action) {
+      case GetNBytesAction():
+        return getBytes(action.numberOfBytes);
+      case ComputeStats():
+        var (min, max, avg) =
+            getStats(action.bytes.materialize().asUint8List());
 
         return RandomBytes(TransferableTypedData.fromList([]), min, max, avg);
       default:
