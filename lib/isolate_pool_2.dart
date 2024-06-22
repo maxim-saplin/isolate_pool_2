@@ -20,6 +20,23 @@ int _instanceIdCounter = 0;
 //TODO consider adding timeouts, check fulfilled requests are deleted
 Map<int, Completer> _isolateRequestCompleters = {}; // requestId is key
 
+class IsolatePoolBaseException implements Exception {
+  final String message;
+  IsolatePoolBaseException(this.message);
+
+  @override
+  String toString() => message;
+}
+// These are the exceptions this API directly throws, each having a "message" String inherited from IsolatePoolBaseException
+// Note: completers' error can be an `IsolatePoolJobsCancelled` now instead of String.
+// To easily migrate `catch (e)` blocks that expect a string, use `e.toString()` for the same error string as before
+class NoSuchIsolateInstance extends IsolatePoolBaseException {  NoSuchIsolateInstance(super.message); }
+class IsolatePoolStopped extends IsolatePoolBaseException { IsolatePoolStopped(super.message); }
+class IsolatePoolJobCancelled extends IsolatePoolBaseException { IsolatePoolJobCancelled(super.message); }
+class IsolateNotYetStarted extends IsolatePoolBaseException { IsolateNotYetStarted(super.message); }
+class BadResponseReceivedError extends IsolatePoolBaseException { BadResponseReceivedError(super.message); }
+
+
 /// Inherti when using pooled instances and defining actions.
 /// Action objects are holders of action type and payload/params when calling pooled intances
 abstract class Action {}
@@ -52,7 +69,7 @@ class PooledInstanceProxy {
   /// should the action fail in the executing isolate
   Future<R> callRemoteMethod<R>(Action action) {
     if (_pool.state == IsolatePoolState.stoped) {
-      throw 'Isolate pool has been stoped, cant call pooled instnace method';
+      throw IsolatePoolStopped('Isolate pool has been stoped, cant call pooled instnace method');
     }
     return _pool._sendRequest<R>(_instanceId, action);
   }
@@ -165,7 +182,7 @@ class IsolatePool {
   /// should the action fail in the executing isolate
   Future<T> scheduleJob<T>(PooledJob job) {
     if (state == IsolatePoolState.stoped) {
-      throw 'Isolate pool has been stoped, cant schedule a job';
+      throw IsolatePoolStopped('Isolate pool has been stoped, cant schedule a job');
     }
     _jobs[lastJobStartedIndex] =
         _PooledJobInternal(job, lastJobStartedIndex, -1);
@@ -180,7 +197,7 @@ class IsolatePool {
   void destroyInstance(PooledInstanceProxy instance) {
     var index = indexOfPi(instance);
     if (index == -1) {
-      throw 'Cant find instance with id ${instance._instanceId} among active to destroy it';
+      throw NoSuchIsolateInstance('Cant find instance with id ${instance._instanceId} among active to destroy it');
     }
 
     _isolateSendPorts[index]!.send(_DestroyRequest(instance._instanceId));
@@ -340,11 +357,11 @@ class IsolatePool {
 
   Future<R> _sendRequest<R>(int instanceId, Action action) {
     if (!_pooledInstances.containsKey(instanceId)) {
-      throw 'Cant send request to non-existing instance, instanceId $instanceId';
+      throw NoSuchIsolateInstance('Cant send request to non-existing instance, instanceId $instanceId');
     }
     var pim = _pooledInstances[instanceId]!;
     if (pim.state == _PooledInstanceStatus.starting) {
-      throw 'Cant send request to instance in Starting state, instanceId $instanceId}';
+      throw IsolateNotYetStarted('Cant send request to instance in Starting state, instanceId $instanceId}');
     }
     var index = pim.isolateIndex;
     var request = _Request(instanceId, action);
@@ -383,7 +400,7 @@ class IsolatePool {
       i.kill();
       for (var c in jobCompleters.values) {
         if (!c.isCompleted) {
-          c.completeError('Isolate pool stopped upon request, cancelling jobs');
+          c.completeError(IsolatePoolJobCancelled('Isolate pool stopped upon request, cancelling jobs'));
         }
       }
       jobCompleters.clear();
@@ -391,7 +408,7 @@ class IsolatePool {
       for (var c in creationCompleters.values) {
         if (!c.isCompleted) {
           c.completeError(
-              'Isolate pool stopped upon request, cancelling instance creation requests');
+              IsolatePoolJobCancelled('Isolate pool stopped upon request, cancelling instance creation requests'));
         }
       }
       creationCompleters.clear();
@@ -399,7 +416,7 @@ class IsolatePool {
       for (var c in _requestCompleters.values) {
         if (!c.isCompleted) {
           c.completeError(
-              'Isolate pool stopped upon request, cancelling pending request');
+              IsolatePoolJobCancelled('Isolate pool stopped upon request, cancelling pending request'));
         }
       }
       _requestCompleters.clear();
@@ -416,7 +433,7 @@ void _processResponse(_Response response,
     [Map<int, Completer>? requestCompleters]) {
   var cc = requestCompleters ?? _isolateRequestCompleters;
   if (!cc.containsKey(response.requestId)) {
-    throw 'Responnse to non-existing request (id ${response.requestId}) recevied';
+    throw BadResponseReceivedError('Responnse to non-existing request (id ${response.requestId}) recevied');
   }
   var c = cc[response.requestId]!;
   if (response.error != null) {

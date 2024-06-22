@@ -83,7 +83,6 @@ void main() {
 
     expect(
         () => px.callRemoteMethod(GetValues()),
-        throwsA(contains(
-            'Cant send request to non-existing instance, instanceId')));
+        throwsA(isA<NoSuchIsolateInstance>()));
   });
 }

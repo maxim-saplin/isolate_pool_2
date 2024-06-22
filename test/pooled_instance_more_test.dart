@@ -188,15 +188,10 @@ void main() {
     pool.destroyInstance(instances[0]);
     expect(pool.numberOfPooledInstances, 4);
 
-    var err = '';
-
-    try {
-      pool.destroyInstance(instances[0]);
-    } catch (e) {
-      err = e.toString();
-    }
-
-    expect(err != '', true);
+    expect(
+      () => pool.destroyInstance(instances[0]),
+      throwsA(isA<NoSuchIsolateInstance>())
+    );
   });
 
   test('Calling method with pool stopped is handled', () async {
@@ -205,14 +200,10 @@ void main() {
     var pi = await pool.addInstance(WorkerA(), null);
     expect(pool.numberOfPooledInstances, 1);
     pool.stop();
-    var err = '';
-    try {
-      await pi.callRemoteMethod(SumIntAction(1, 1));
-    } catch (e) {
-      err = e.toString();
-    }
     expect(
-        err, 'Isolate pool has been stoped, cant call pooled instnace method');
+      () async => await pi.callRemoteMethod(SumIntAction(1, 1)),
+      throwsA(isA<IsolatePoolStopped>())
+    );
   });
 
   test('Can stop while there\'re instances being created', () async {
