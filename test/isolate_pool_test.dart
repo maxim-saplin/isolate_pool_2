@@ -1,7 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 @TestOn('vm')
+library;
 
-import 'package:test/expect.dart';
 import 'package:test/test.dart';
 import 'package:isolate_pool_2/isolate_pool_2.dart';
 

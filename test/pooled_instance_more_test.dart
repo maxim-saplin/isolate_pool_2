@@ -1,4 +1,5 @@
 @TestOn('vm')
+library;
 
 import 'package:isolate_pool_2/isolate_pool_2.dart';
 import 'package:test/test.dart';
@@ -78,20 +79,20 @@ class WorkerA extends PooledInstance {
 
   @override
   Future receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case SumIntAction:
-        var ac = action as SumIntAction;
+    switch (action) {
+      case SumIntAction _:
+        var ac = action;
         return _a.sum(ac.x, ac.y);
-      case ConcatAction:
-        var ac = action as ConcatAction;
+      case ConcatAction _:
+        var ac = action;
         return _a.concat(ac.x, ac.y);
-      case CallbackIssuingAction:
-        var ac = action as CallbackIssuingAction;
+      case CallbackIssuingAction _:
+        var ac = action;
         return _a.deffered(ac.x, (y) async {
           var x = await callRemoteMethod<int>(CallbackAction(y));
           await callRemoteMethod(CallbackAction(x + 1));
         });
-      case FailAction:
+      case FailAction _:
         return _a.fail();
     }
   }
@@ -109,12 +110,12 @@ class WorkerB extends PooledInstance {
 
   @override
   Future receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case SumIntAction:
-        var ac = action as SumIntAction;
+    switch (action) {
+      case SumIntAction _:
+        var ac = action;
         return _a.sum(ac.x, ac.y);
-      case SumDynamicAction:
-        var ac = action as SumDynamicAction;
+      case SumDynamicAction _:
+        var ac = action;
         if (ac.x is int) return _a.sum(ac.x, ac.y);
         if (ac.x is double) return _b.sum(ac.x, ac.y);
         throw 'SumDynamic supports only int and double';
