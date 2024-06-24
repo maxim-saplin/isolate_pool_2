@@ -1,3 +1,6 @@
+## 1.0.7
+- Typed exceptions (PR#5)
+
 ## 1.0.6
 - Upgraded minimum Dart SDK to 3.0.0
 - Refined example, added comments
