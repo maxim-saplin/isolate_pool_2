@@ -1,4 +1,5 @@
 @TestOn('vm')
+library;
 
 import 'package:isolate_pool_2/isolate_pool_2.dart';
 import 'package:test/test.dart';
@@ -78,20 +79,20 @@ class WorkerA extends PooledInstance {
 
   @override
   Future receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case SumIntAction:
-        var ac = action as SumIntAction;
+    switch (action) {
+      case SumIntAction _:
+        var ac = action;
         return _a.sum(ac.x, ac.y);
-      case ConcatAction:
-        var ac = action as ConcatAction;
+      case ConcatAction _:
+        var ac = action;
         return _a.concat(ac.x, ac.y);
-      case CallbackIssuingAction:
-        var ac = action as CallbackIssuingAction;
+      case CallbackIssuingAction _:
+        var ac = action;
         return _a.deffered(ac.x, (y) async {
           var x = await callRemoteMethod<int>(CallbackAction(y));
           await callRemoteMethod(CallbackAction(x + 1));
         });
-      case FailAction:
+      case FailAction _:
         return _a.fail();
     }
   }
@@ -109,12 +110,12 @@ class WorkerB extends PooledInstance {
 
   @override
   Future receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case SumIntAction:
-        var ac = action as SumIntAction;
+    switch (action) {
+      case SumIntAction _:
+        var ac = action;
         return _a.sum(ac.x, ac.y);
-      case SumDynamicAction:
-        var ac = action as SumDynamicAction;
+      case SumDynamicAction _:
+        var ac = action;
         if (ac.x is int) return _a.sum(ac.x, ac.y);
         if (ac.x is double) return _b.sum(ac.x, ac.y);
         throw 'SumDynamic supports only int and double';
@@ -188,15 +189,10 @@ void main() {
     pool.destroyInstance(instances[0]);
     expect(pool.numberOfPooledInstances, 4);
 
-    var err = '';
-
-    try {
-      pool.destroyInstance(instances[0]);
-    } catch (e) {
-      err = e.toString();
-    }
-
-    expect(err != '', true);
+    expect(
+      () => pool.destroyInstance(instances[0]),
+      throwsA(isA<NoSuchIsolateInstance>())
+    );
   });
 
   test('Calling method with pool stopped is handled', () async {
@@ -205,14 +201,10 @@ void main() {
     var pi = await pool.addInstance(WorkerA(), null);
     expect(pool.numberOfPooledInstances, 1);
     pool.stop();
-    var err = '';
-    try {
-      await pi.callRemoteMethod(SumIntAction(1, 1));
-    } catch (e) {
-      err = e.toString();
-    }
     expect(
-        err, 'Isolate pool has been stoped, cant call pooled instnace method');
+      () async => await pi.callRemoteMethod(SumIntAction(1, 1)),
+      throwsA(isA<IsolatePoolStopped>())
+    );
   });
 
   test('Can stop while there\'re instances being created', () async {

@@ -1,5 +1,6 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 @TestOn('vm')
+library;
 
 import 'package:test/test.dart';
 import 'package:isolate_pool_2/isolate_pool_2.dart';
@@ -170,8 +171,8 @@ void main() {
       try {
         p.stop();
         print(await Future.wait(futures));
-      } catch (e) {
-        if (e == 'Isolate pool stopped upon request, cancelling jobs') {
+      } on IsolatePoolJobCancelled catch (e) {
+        if (e.toString() == 'Isolate pool stopped upon request, cancelling jobs') {
           thrown = true;
         }
       }

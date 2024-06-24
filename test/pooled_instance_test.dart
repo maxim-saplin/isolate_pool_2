@@ -1,5 +1,6 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 @TestOn('vm')
+library;
 
 import 'package:test/test.dart';
 import 'package:isolate_pool_2/isolate_pool_2.dart';
@@ -17,11 +18,11 @@ class ValueHolder extends PooledInstance {
 
   @override
   Future<dynamic> receiveRemoteCall(Action action) async {
-    switch (action.runtimeType) {
-      case GetValues:
+    switch (action) {
+      case GetValues _:
         return _values;
-      case SetValue:
-        var v = (action as SetValue).value;
+      case SetValue _:
+        var v = action.value;
         _values.add(v);
         return;
       default:
@@ -83,7 +84,6 @@ void main() {
 
     expect(
         () => px.callRemoteMethod(GetValues()),
-        throwsA(contains(
-            'Cant send request to non-existing instance, instanceId')));
+        throwsA(isA<NoSuchIsolateInstance>()));
   });
 }
