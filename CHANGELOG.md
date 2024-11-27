@@ -1,3 +1,6 @@
+## 1.0.8
+- Fixing analyzer warnings
+
 ## 1.0.7
 - Typed exceptions (PR#5)
 
